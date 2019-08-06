@@ -1,24 +1,31 @@
 module Main exposing (Assignment, Schedule, Slot, TA, scheduleTas)
 
-{-
-   PROBLEM 2:
+import Browser
+import Browser.Navigation as Nav
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Url
+import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
 
-   In UBC's version of How to Code, there are often more than 800 students taking
-   the course in any given semester, meaning there are often over 40 Teaching Assistants.
 
-   Designing a schedule for them by hand is hard work - luckily we've learned enough now to write
-   a program to do it for us!
 
-   Below are some data definitions for a simplified version of a TA schedule. There are some
-   number of slots that must be filled, each represented by a natural number. Each TA is
-   available for some of these slots, and has a maximum number of shifts they can work.
+-- MAIN
 
-   Design a search program that consumes a list of TAs and a list of Slots, and produces one
-   valid schedule where each Slot is assigned to a TA, and no TA is working more than their
-   maximum shifts. If no such schedules exist, produce false.
 
-   You should supplement the given check-expects and remember to follow the recipe!
--}
+main : Program () Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
+        }
+
+
+
+-- MODEL
 
 
 type alias Slot =
@@ -64,6 +71,119 @@ type alias Assignment =
 
 type alias Schedule =
     List Assignment
+
+
+type Page
+    = Home
+    | Slots
+    | Tas
+    | Schedule
+
+
+type alias Model =
+    { key : Nav.Key
+    , url : Url.Url
+    , page : Maybe Page
+    }
+
+
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
+    ( Model key url (getPage url), Cmd.none )
+
+
+
+-- UPDATE
+
+
+type Msg
+    = LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
+
+        UrlChanged url ->
+            ( { model | url = url, page = getPage url }, Cmd.none )
+
+
+route : Parser (Page -> a) a
+route =
+    oneOf
+        [ map Home top
+        , map Slots (s "slots")
+        , map Tas (s "tas")
+        , map Schedule (s "schedule")
+        ]
+
+
+getPage : Url.Url -> Maybe Page
+getPage =
+    parse route
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+
+-- VIEW
+
+
+view : Model -> Browser.Document Msg
+view model =
+    { title = "URL Interceptor"
+    , body =
+        [ text "The current URL is: "
+        , b [] [ text (Url.toString model.url) ]
+        , div [ id "nav" ]
+            [ ul []
+                [ viewLink "/" "Home"
+                , viewLink "/slots" "Slots"
+                , viewLink "/tas" "Tas"
+                , viewLink "/schedule" "Schedule"
+                ]
+            ]
+        , div [ id "body" ]
+            [ case model.page of
+                Nothing ->
+                    h2 [] [ text "Not Found" ]
+
+                Just page ->
+                    case page of
+                        Home ->
+                            h2 [] [ text "Home" ]
+
+                        Slots ->
+                            h2 [] [ text "Slots" ]
+
+                        Tas ->
+                            h2 [] [ text "Tas" ]
+
+                        Schedule ->
+                            h2 [] [ text "Schedule" ]
+            ]
+        ]
+    }
+
+
+viewLink : String -> String -> Html msg
+viewLink path name =
+    li [] [ a [ href path ] [ text name ] ]
 
 
 
