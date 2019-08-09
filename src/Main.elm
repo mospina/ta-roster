@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onInput, onSubmit)
 import Url
 import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
 
@@ -80,16 +81,30 @@ type Page
     | Schedule
 
 
+type alias SlotForm =
+    { from : Int
+    , to : Int
+    , id : Int
+    }
+
+
+initialSlotForm : SlotForm
+initialSlotForm =
+    SlotForm 0 0 0
+
+
 type alias Model =
     { key : Nav.Key
-    , url : Url.Url
+    , url : Url.Url -- I may don't need URL in the model
     , page : Maybe Page
+    , slotForm : SlotForm
+    , slots : List SlotForm
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (getPage url), Cmd.none )
+    ( Model key url (getPage url) initialSlotForm [], Cmd.none )
 
 
 
@@ -99,6 +114,8 @@ init flags url key =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | UpdateSlotForm SlotForm
+    | UpdateSlots
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -114,6 +131,21 @@ update msg model =
 
         UrlChanged url ->
             ( { model | url = url, page = getPage url }, Cmd.none )
+
+        UpdateSlotForm slotForm ->
+            ( { model | slotForm = slotForm }, Cmd.none )
+
+        UpdateSlots ->
+            let
+                slotForm =
+                    SlotForm model.slotForm.from model.slotForm.to 0
+            in
+            ( { model
+                | slots = slotForm :: model.slots
+                , slotForm = initialSlotForm
+              }
+            , Cmd.none
+            )
 
 
 route : Parser (Page -> a) a
@@ -169,7 +201,11 @@ view model =
                             h2 [] [ text "Home" ]
 
                         Slots ->
-                            h2 [] [ text "Slots" ]
+                            div [ class "content" ]
+                                [ h2 [] [ text "Slots" ]
+                                , div [ class "slots" ] <| List.map (\slot -> text <| String.fromInt slot.from) model.slots
+                                , slotFormView model.slotForm
+                                ]
 
                         Tas ->
                             h2 [] [ text "Tas" ]
@@ -184,6 +220,47 @@ view model =
 viewLink : String -> String -> Html msg
 viewLink path name =
     li [] [ a [ href path ] [ text name ] ]
+
+
+slotFormView : SlotForm -> Html Msg
+slotFormView slotForm =
+    Html.form [ onSubmit UpdateSlots ]
+        [ label []
+            [ text "Start at"
+            , input
+                [ type_ "text"
+                , placeholder "Start at"
+                , value <| String.fromInt slotForm.from
+                , onInput (\s -> UpdateSlotForm { slotForm | from = stringToInt s })
+                ]
+                []
+            ]
+        , label []
+            [ text "End at"
+            , input
+                [ type_ "text"
+                , placeholder "End at"
+                , value <| String.fromInt slotForm.to
+                , onInput (\s -> UpdateSlotForm { slotForm | to = stringToInt s })
+                ]
+                []
+            ]
+        , button [ type_ "submit" ] [ text "Add" ]
+        ]
+
+
+
+-- A helper for string to int
+
+
+stringToInt : String -> Int
+stringToInt s =
+    case String.toInt s of
+        Nothing ->
+            0
+
+        Just i ->
+            i
 
 
 
