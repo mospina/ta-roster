@@ -1,11 +1,12 @@
-module Main exposing (Assignment, RosterTime, Schedule, Slot, TA, scheduleTas)
+module Main exposing (Assignment, Schedule, Slot, TA, scheduleTas)
 
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onSubmit)
-import UUID exposing (UUID)
+import Random exposing (generate)
+import UUID exposing (..)
 import Url
 import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
 
@@ -30,31 +31,9 @@ main =
 -- MODEL
 
 
-type alias RosterTime =
-    { hour : Int
-    , min : Int
-    }
-
-
-
--- interp. each roster time has an hour and min(utes).
---         Hour is [1,24], minute is [0, 59]
---
--- an hour = RosterTime 3 15
-{-
-   fnForRosterTime : RosterTime -> ...
-   fnForRosterTime time =
-     ... time.hour  -- Int
-         time.min   -- Int
-
-   -- Template rules used:
-   --   - compound: 2 fields
--}
-
-
 type alias Slot =
-    { start : RosterTime
-    , end : RosterTime
+    { start : String
+    , end : String
     , day : String
     , id : UUID
     }
@@ -128,15 +107,15 @@ type Page
 
 
 type alias SlotForm =
-    { from : Int
-    , to : Int
-    , id : Int
+    { start : String
+    , end : String
+    , day : String
     }
 
 
 initialSlotForm : SlotForm
 initialSlotForm =
-    SlotForm 0 0 0
+    SlotForm "00:00" "00:00" "Monday"
 
 
 type alias Model =
@@ -144,7 +123,7 @@ type alias Model =
     , url : Url.Url -- I may don't need URL in the model
     , page : Maybe Page
     , slotForm : SlotForm
-    , slots : List SlotForm
+    , slots : List Slot
     }
 
 
@@ -162,6 +141,7 @@ type Msg
     | UrlChanged Url.Url
     | UpdateSlotForm SlotForm
     | UpdateSlots
+    | GenerateUUID UUID.UUID
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -182,14 +162,14 @@ update msg model =
             ( { model | slotForm = slotForm }, Cmd.none )
 
         UpdateSlots ->
+            ( model, Random.generate GenerateUUID UUID.generator )
+
+        GenerateUUID uuid ->
             let
-                slotForm =
-                    SlotForm model.slotForm.from model.slotForm.to 0
+                slot =
+                    Slot model.slotForm.start model.slotForm.end model.slotForm.day uuid
             in
-            ( { model
-                | slots = slotForm :: model.slots
-                , slotForm = initialSlotForm
-              }
+            ( { model | slots = slot :: model.slots, slotForm = initialSlotForm }
             , Cmd.none
             )
 
@@ -249,7 +229,7 @@ view model =
                         Slots ->
                             div [ class "content" ]
                                 [ h2 [] [ text "Slots" ]
-                                , div [ class "slots" ] <| List.map (\slot -> text <| String.fromInt slot.from) model.slots
+                                , div [ class "slots" ] <| List.map (\slot -> text slot.start) model.slots
                                 , slotFormView model.slotForm
                                 ]
 
@@ -276,8 +256,8 @@ slotFormView slotForm =
             , input
                 [ type_ "text"
                 , placeholder "Start at"
-                , value <| String.fromInt slotForm.from
-                , onInput (\s -> UpdateSlotForm { slotForm | from = stringToInt s })
+                , value slotForm.start
+                , onInput (\s -> UpdateSlotForm { slotForm | start = s })
                 ]
                 []
             ]
@@ -286,8 +266,8 @@ slotFormView slotForm =
             , input
                 [ type_ "text"
                 , placeholder "End at"
-                , value <| String.fromInt slotForm.to
-                , onInput (\s -> UpdateSlotForm { slotForm | to = stringToInt s })
+                , value slotForm.end
+                , onInput (\s -> UpdateSlotForm { slotForm | end = s })
                 ]
                 []
             ]

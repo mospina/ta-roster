@@ -25,23 +25,23 @@ generateUUID i =
 
 
 slot1 =
-    Slot (RosterTime 13 0) (RosterTime 14 0) "Monday" (generateUUID 1)
+    Slot "13:00" "14:00" "Monday" (generateUUID 1)
 
 
 slot2 =
-    Slot (RosterTime 14 0) (RosterTime 15 0) "Monday" (generateUUID 2)
+    Slot "14:00" "15:00" "Monday" (generateUUID 2)
 
 
 slot3 =
-    Slot (RosterTime 15 0) (RosterTime 16 0) "Monday" (generateUUID 3)
+    Slot "15:00" "16:00" "Monday" (generateUUID 3)
 
 
 slot4 =
-    Slot (RosterTime 16 0) (RosterTime 17 0) "Monday" (generateUUID 4)
+    Slot "16:00" "17:00" "Monday" (generateUUID 4)
 
 
 slot5 =
-    Slot (RosterTime 16 0) (RosterTime 17 0) "Friday" (generateUUID 5)
+    Slot "16:00" "17:00" "Friday" (generateUUID 5)
 
 
 slots =
