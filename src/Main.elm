@@ -1,10 +1,11 @@
-module Main exposing (Assignment, Schedule, Slot, TA, scheduleTas)
+module Main exposing (Assignment, RosterTime, Schedule, Slot, TA, scheduleTas)
 
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onSubmit)
+import UUID exposing (UUID)
 import Url
 import Url.Parser exposing (Parser, map, oneOf, parse, s, top)
 
@@ -29,13 +30,58 @@ main =
 -- MODEL
 
 
+type alias RosterTime =
+    { hour : Int
+    , min : Int
+    }
+
+
+
+-- interp. each roster time has an hour and min(utes).
+--         Hour is [1,24], minute is [0, 59]
+--
+-- an hour = RosterTime 3 15
+{-
+   fnForRosterTime : RosterTime -> ...
+   fnForRosterTime time =
+     ... time.hour  -- Int
+         time.min   -- Int
+
+   -- Template rules used:
+   --   - compound: 2 fields
+-}
+
+
 type alias Slot =
-    Int
+    { start : RosterTime
+    , end : RosterTime
+    , day : String
+    , id : UUID
+    }
 
 
 
--- interp. each TA slot has a number, is the same length, and none overlap
+-- interp. each slot has a number, is the same length, and none overlap
 --         it can be thougth as an ID.
+--
+-- slot = Slot 1300000 1500000 "Monday" 1234
+{-
+    fnForSlot : Slot -> ...
+    fnForSlot slot =
+      ... slot.start  -- Time.Posix
+          slot.end    -- Time.Posix
+          slot.day    -- String
+          slot.id     -- UUID
+    -- Template rules used:
+    --   - compound: 4 fields
+
+   fnForListOfSlots : List Slot -> ...
+   fnForListOfSlots  slots =
+     case slots of
+       [] -> []
+       first :: rest -> ... (fnForSlot first)
+                            (fnForListOfSlots rest)
+-}
 
 
 type alias TA =

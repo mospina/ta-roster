@@ -3,7 +3,49 @@ module MainTest exposing (scheduleTasTest)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Main exposing (..)
+import Random
 import Test exposing (..)
+import UUID
+
+
+
+-- Slot examples
+
+
+generateUUID : Int -> UUID.UUID
+generateUUID i =
+    let
+        initialSeed =
+            Random.initialSeed i
+
+        ( uuid, _ ) =
+            Random.step UUID.generator initialSeed
+    in
+    uuid
+
+
+slot1 =
+    Slot (RosterTime 13 0) (RosterTime 14 0) "Monday" (generateUUID 1)
+
+
+slot2 =
+    Slot (RosterTime 14 0) (RosterTime 15 0) "Monday" (generateUUID 2)
+
+
+slot3 =
+    Slot (RosterTime 15 0) (RosterTime 16 0) "Monday" (generateUUID 3)
+
+
+slot4 =
+    Slot (RosterTime 16 0) (RosterTime 17 0) "Monday" (generateUUID 4)
+
+
+slot5 =
+    Slot (RosterTime 16 0) (RosterTime 17 0) "Friday" (generateUUID 5)
+
+
+slots =
+    [ slot1, slot2, slot3, slot4 ]
 
 
 
@@ -11,15 +53,15 @@ import Test exposing (..)
 
 
 soba =
-    TA "Soba" 2 [ 1, 3 ]
+    TA "Soba" 2 [ slot1, slot3 ]
 
 
 udon =
-    TA "Udon" 1 [ 3, 4 ]
+    TA "Udon" 1 [ slot3, slot4 ]
 
 
 ramen =
-    TA "Ramen" 1 [ 2 ]
+    TA "Ramen" 1 [ slot2 ]
 
 
 noodleTAs =
@@ -34,37 +76,37 @@ scheduleTasTest =
                 scheduleTas [] [] |> Expect.equal (Just [])
         , test "return Nothing on empty tas and non-empty slots" <|
             \_ ->
-                scheduleTas [] [ 1, 2 ] |> Expect.equal Nothing
+                scheduleTas [] [ slot1, slot2 ] |> Expect.equal Nothing
         , test "return empty on non-empty tas and empty slots" <|
             \_ ->
                 scheduleTas [ soba ] [] |> Expect.equal (Just [])
         , test "return Just schedule if the schedule is possible" <|
             \_ ->
-                scheduleTas [ soba ] [ 1 ] |> Expect.equal (Just [ Assignment soba 1 ])
+                scheduleTas [ soba ] [ slot1 ] |> Expect.equal (Just [ Assignment soba slot1 ])
         , test "return Nothing if the schedule is not possible" <|
             \_ ->
-                scheduleTas [ soba ] [ 2 ] |> Expect.equal Nothing
+                scheduleTas [ soba ] [ slot2 ] |> Expect.equal Nothing
         , test "return Just schedule on multiple slots" <|
             \_ ->
-                scheduleTas [ soba ] [ 1, 3 ]
+                scheduleTas [ soba ] [ slot1, slot3 ]
                     |> Expect.equal
                         (Just
-                            [ Assignment soba 3
-                            , Assignment soba 1
+                            [ Assignment soba slot3
+                            , Assignment soba slot1
                             ]
                         )
         , test "return Just schedule on multiple Tas and slots" <|
             \_ ->
-                scheduleTas noodleTAs [ 1, 2, 3, 4 ]
+                scheduleTas noodleTAs slots
                     |> Expect.equal
                         (Just
-                            [ Assignment udon 4
-                            , Assignment soba 3
-                            , Assignment ramen 2
-                            , Assignment soba 1
+                            [ Assignment udon slot4
+                            , Assignment soba slot3
+                            , Assignment ramen slot2
+                            , Assignment soba slot1
                             ]
                         )
         , test "return Nothing on multiple Tas and slots when schedule is not possible" <|
             \_ ->
-                scheduleTas noodleTAs [ 1, 2, 3, 4, 5 ] |> Expect.equal Nothing
+                scheduleTas noodleTAs [ slot1, slot2, slot3, slot4, slot5 ] |> Expect.equal Nothing
         ]
