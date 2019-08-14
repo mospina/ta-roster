@@ -216,29 +216,27 @@ view model =
                 , viewLink "/schedule" "Schedule"
                 ]
             ]
-        , div [ id "body" ]
-            [ case model.page of
+        , div [ id "body" ] <|
+            case model.page of
                 Nothing ->
-                    h2 [] [ text "Not Found" ]
+                    [ h2 [] [ text "Not Found" ] ]
 
                 Just page ->
                     case page of
                         Home ->
-                            h2 [] [ text "Home" ]
+                            [ h2 [] [ text "Home" ] ]
 
                         Slots ->
-                            div [ class "content" ]
-                                [ h2 [] [ text "Slots" ]
-                                , div [ class "slots" ] <| List.map (\slot -> text slot.start) model.slots
-                                , slotFormView model.slotForm
-                                ]
+                            [ h2 [] [ text "Slots" ]
+                            , slotsTable model.slots
+                            , slotFormView model.slotForm
+                            ]
 
                         Tas ->
-                            h2 [] [ text "Tas" ]
+                            [ h2 [] [ text "Tas" ] ]
 
                         Schedule ->
-                            h2 [] [ text "Schedule" ]
-            ]
+                            [ h2 [] [ text "Schedule" ] ]
         ]
     }
 
@@ -248,45 +246,91 @@ viewLink path name =
     li [] [ a [ href path ] [ text name ] ]
 
 
+slotsTable : List Slot -> Html Msg
+slotsTable slots =
+    let
+        slotRow slot =
+            tr []
+                [ td [] [ text slot.day ]
+                , td [] [ text slot.start ]
+                , td [] [ text slot.end ]
+                ]
+    in
+    table [ class "slots" ] <|
+        List.map slotRow slots
+
+
 slotFormView : SlotForm -> Html Msg
 slotFormView slotForm =
     Html.form [ onSubmit UpdateSlots ]
         [ label []
+            [ text "Day"
+            , select
+                [ placeholder "Day"
+                , value slotForm.day
+                , onInput (\s -> UpdateSlotForm { slotForm | day = s })
+                ]
+                dayOptions
+            ]
+        , label []
             [ text "Start at"
-            , input
-                [ type_ "text"
-                , placeholder "Start at"
+            , select
+                [ placeholder "Start at"
                 , value slotForm.start
                 , onInput (\s -> UpdateSlotForm { slotForm | start = s })
                 ]
-                []
+                timeOptions
             ]
         , label []
             [ text "End at"
-            , input
-                [ type_ "text"
-                , placeholder "End at"
+            , select
+                [ placeholder "End at"
                 , value slotForm.end
                 , onInput (\s -> UpdateSlotForm { slotForm | end = s })
                 ]
-                []
+                timeOptions
             ]
         , button [ type_ "submit" ] [ text "Add" ]
         ]
 
 
+timeOptions =
+    [ option [ value "00:00" ] [ text "00:00" ]
+    , option [ value "01:00" ] [ text "01:00" ]
+    , option [ value "02:00" ] [ text "02:00" ]
+    , option [ value "03:00" ] [ text "03:00" ]
+    , option [ value "04:00" ] [ text "04:00" ]
+    , option [ value "05:00" ] [ text "05:00" ]
+    , option [ value "06:00" ] [ text "06:00" ]
+    , option [ value "07:00" ] [ text "07:00" ]
+    , option [ value "08:00" ] [ text "08:00" ]
+    , option [ value "09:00" ] [ text "09:00" ]
+    , option [ value "10:00" ] [ text "10:00" ]
+    , option [ value "11:00" ] [ text "11:00" ]
+    , option [ value "12:00" ] [ text "12:00" ]
+    , option [ value "13:00" ] [ text "13:00" ]
+    , option [ value "14:00" ] [ text "14:00" ]
+    , option [ value "15:00" ] [ text "15:00" ]
+    , option [ value "16:00" ] [ text "16:00" ]
+    , option [ value "17:00" ] [ text "17:00" ]
+    , option [ value "18:00" ] [ text "18:00" ]
+    , option [ value "19:00" ] [ text "19:00" ]
+    , option [ value "20:00" ] [ text "20:00" ]
+    , option [ value "21:00" ] [ text "21:00" ]
+    , option [ value "22:00" ] [ text "22:00" ]
+    , option [ value "23:00" ] [ text "23:00" ]
+    ]
 
--- A helper for string to int
 
-
-stringToInt : String -> Int
-stringToInt s =
-    case String.toInt s of
-        Nothing ->
-            0
-
-        Just i ->
-            i
+dayOptions =
+    [ option [ value "Monday" ] [ text "Monday" ]
+    , option [ value "Tuesday" ] [ text "Tuesday" ]
+    , option [ value "Wednesday" ] [ text "Wednesday" ]
+    , option [ value "Thursday" ] [ text "Thrusday" ]
+    , option [ value "Friday" ] [ text "Friday" ]
+    , option [ value "Saturday" ] [ text "Saturday" ]
+    , option [ value "Sunday" ] [ text "Sunday" ]
+    ]
 
 
 
