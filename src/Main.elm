@@ -130,7 +130,6 @@ initialTaForm =
 
 type alias Model =
     { key : Nav.Key
-    , url : Url.Url -- I may don't need URL in the model
     , page : Maybe Page
     , slotForm : SlotForm
     , slots : List Slot
@@ -141,7 +140,7 @@ type alias Model =
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (getPage url) initialSlotForm [] initialTaForm [], Cmd.none )
+    ( Model key (getPage url) initialSlotForm [] initialTaForm [], Cmd.none )
 
 
 
@@ -170,7 +169,7 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | url = url, page = getPage url }, Cmd.none )
+            ( { model | page = getPage url }, Cmd.none )
 
         UpdateSlotForm slotForm ->
             ( { model | slotForm = slotForm }, Cmd.none )
@@ -224,51 +223,52 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "URL Interceptor"
+    { title = "TA Roster"
     , body =
-        [ text "The current URL is: "
-        , b [] [ text (Url.toString model.url) ]
-        , div [ id "nav" ]
-            [ ul []
-                [ viewLink "/" "Home"
-                , viewLink "/slots" "Slots"
-                , viewLink "/tas" "Tas"
-                , viewLink "/schedule" "Schedule"
+        [ div [ id "header" ] [ h1 [] [ text "TA Roster" ] ]
+        , div [ id "body" ]
+            [ div [ id "nav" ]
+                [ ul []
+                    [ viewLink "/" "Home"
+                    , viewLink "/slots" "Slots"
+                    , viewLink "/tas" "Tas"
+                    , viewLink "/schedule" "Schedule"
+                    ]
                 ]
+            , div [ id "content" ] <|
+                case model.page of
+                    Nothing ->
+                        [ h2 [] [ text "Not Found" ] ]
+
+                    Just page ->
+                        case page of
+                            Home ->
+                                [ h2 [] [ text "Home" ] ]
+
+                            Slots ->
+                                [ h2 [] [ text "Slots" ]
+                                , slotsTable model.slots
+                                , slotFormView model.slotForm
+                                ]
+
+                            Tas ->
+                                [ h2 [] [ text "Tas" ]
+                                , tasTable model.tas
+                                , tasFormView model.taForm model.slots
+                                ]
+
+                            Schedule ->
+                                [ h2 [] [ text "Schedule" ]
+                                , scheduleTable model.tas model.slots
+                                ]
             ]
-        , div [ id "body" ] <|
-            case model.page of
-                Nothing ->
-                    [ h2 [] [ text "Not Found" ] ]
-
-                Just page ->
-                    case page of
-                        Home ->
-                            [ h2 [] [ text "Home" ] ]
-
-                        Slots ->
-                            [ h2 [] [ text "Slots" ]
-                            , slotsTable model.slots
-                            , slotFormView model.slotForm
-                            ]
-
-                        Tas ->
-                            [ h2 [] [ text "Tas" ]
-                            , tasTable model.tas
-                            , tasFormView model.taForm model.slots
-                            ]
-
-                        Schedule ->
-                            [ h2 [] [ text "Schedule" ]
-                            , scheduleTable model.tas model.slots
-                            ]
         ]
     }
 
 
 viewLink : String -> String -> Html msg
 viewLink path name =
-    li [] [ a [ href path ] [ text name ] ]
+    li [ class "page" ] [ a [ href path ] [ text name ] ]
 
 
 slotsTable : List Slot -> Html Msg
