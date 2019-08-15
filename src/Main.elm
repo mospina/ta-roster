@@ -1,4 +1,4 @@
-module Main exposing (Assignment, Schedule, Slot, TA, scheduleTas)
+module Main exposing (Assignment, Schedule, Slot, TA, addSlotFromId, scheduleTas)
 
 import Browser
 import Browser.Navigation as Nav
@@ -118,18 +118,29 @@ initialSlotForm =
     SlotForm "00:00" "00:00" "Monday"
 
 
+type alias TaForm =
+    TA
+
+
+initialTaForm : TaForm
+initialTaForm =
+    TA "" 0 []
+
+
 type alias Model =
     { key : Nav.Key
     , url : Url.Url -- I may don't need URL in the model
     , page : Maybe Page
     , slotForm : SlotForm
     , slots : List Slot
+    , taForm : TaForm
+    , tas : List TA
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url (getPage url) initialSlotForm [], Cmd.none )
+    ( Model key url (getPage url) initialSlotForm [] initialTaForm [], Cmd.none )
 
 
 
@@ -142,6 +153,8 @@ type Msg
     | UpdateSlotForm SlotForm
     | UpdateSlots
     | GenerateUUID UUID.UUID
+    | UpdateTaForm TaForm
+    | UpdateTas
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -172,6 +185,12 @@ update msg model =
             ( { model | slots = slot :: model.slots, slotForm = initialSlotForm }
             , Cmd.none
             )
+
+        UpdateTaForm taForm ->
+            ( { model | taForm = taForm }, Cmd.none )
+
+        UpdateTas ->
+            ( { model | tas = model.taForm :: model.tas, taForm = initialTaForm }, Cmd.none )
 
 
 route : Parser (Page -> a) a
@@ -233,7 +252,10 @@ view model =
                             ]
 
                         Tas ->
-                            [ h2 [] [ text "Tas" ] ]
+                            [ h2 [] [ text "Tas" ]
+                            , tasTable model.tas
+                            , tasFormView model.taForm model.slots
+                            ]
 
                         Schedule ->
                             [ h2 [] [ text "Schedule" ] ]
@@ -256,7 +278,7 @@ slotsTable slots =
                 , td [] [ text slot.end ]
                 ]
     in
-    table [ class "slots" ] <|
+    table [] <|
         List.map slotRow slots
 
 
@@ -331,6 +353,106 @@ dayOptions =
     , option [ value "Saturday" ] [ text "Saturday" ]
     , option [ value "Sunday" ] [ text "Sunday" ]
     ]
+
+
+tasTable : List TA -> Html Msg
+tasTable tas =
+    let
+        taRow ta =
+            tr []
+                [ td [] [ text ta.name ]
+                , td [] [ text (String.fromInt ta.max) ]
+                , td [] [ text (String.fromInt <| List.length ta.avail) ]
+                ]
+    in
+    table [] <| List.map taRow tas
+
+
+tasFormView : TaForm -> List Slot -> Html Msg
+tasFormView taForm slots =
+    Html.form [ onSubmit UpdateTas ]
+        [ label []
+            [ text "Name"
+            , input
+                [ type_ "text"
+                , placeholder "Name"
+                , value taForm.name
+                , onInput (\t -> UpdateTaForm { taForm | name = t })
+                ]
+                []
+            ]
+        , label []
+            [ text "Max."
+            , input
+                [ type_ "text"
+                , placeholder "Max. number of slots"
+                , value (String.fromInt taForm.max)
+                , onInput (\t -> UpdateTaForm { taForm | max = stringToInt t })
+                ]
+                []
+            ]
+        , label []
+            [ text "Availability"
+            , select
+                [ multiple True
+                , placeholder "Availability"
+                , onInput (\t -> UpdateTaForm { taForm | avail = addSlotFromId slots taForm.avail t })
+                ]
+                (slotOptions slots)
+            ]
+        , button [ type_ "submit" ] [ text "Add" ]
+        ]
+
+
+slotOptions : List Slot -> List (Html Msg)
+slotOptions slots =
+    let
+        slotToOption slot =
+            option [ value (UUID.toString slot.id) ] [ text (slotToString slot) ]
+    in
+    List.map slotToOption slots
+
+
+addSlotFromId : List Slot -> List Slot -> String -> List Slot
+addSlotFromId slots avail id =
+    let
+        getMaybeSlot : List Slot -> String -> Maybe Slot
+        getMaybeSlot los uuid =
+            case los of
+                [] ->
+                    Nothing
+
+                first :: rest ->
+                    if UUID.toString first.id == uuid then
+                        Just first
+
+                    else
+                        getMaybeSlot rest uuid
+
+        maybeSlot =
+            getMaybeSlot slots id
+    in
+    case maybeSlot of
+        Nothing ->
+            avail
+
+        Just slot ->
+            slot :: avail
+
+
+slotToString : Slot -> String
+slotToString slot =
+    slot.day ++ ", " ++ slot.start ++ "-" ++ slot.end
+
+
+stringToInt : String -> Int
+stringToInt s =
+    case String.toInt s of
+        Nothing ->
+            0
+
+        Just i ->
+            i
 
 
 

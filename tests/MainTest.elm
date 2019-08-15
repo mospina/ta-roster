@@ -1,4 +1,4 @@
-module MainTest exposing (scheduleTasTest)
+module MainTest exposing (addSlotFromIdTest, scheduleTasTest)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
@@ -109,4 +109,36 @@ scheduleTasTest =
         , test "return Nothing on multiple Tas and slots when schedule is not possible" <|
             \_ ->
                 scheduleTas noodleTAs [ slot1, slot2, slot3, slot4, slot5 ] |> Expect.equal Nothing
+        ]
+
+
+addSlotFromIdTest : Test
+addSlotFromIdTest =
+    describe "addSlotFromId"
+        [ test "return empty on empty slots and empty id" <|
+            \_ ->
+                addSlotFromId [] [] "" |> Expect.equal []
+        , test "return unchanged list on empty slots" <|
+            \_ ->
+                let
+                    uuid =
+                        UUID.toString slot5.id
+                in
+                addSlotFromId [] [ slot1, slot2 ] uuid |> Expect.equal [ slot1, slot2 ]
+        , test "return unchanged list of slot on empty id" <|
+            \_ ->
+                addSlotFromId slots [ slot1, slot2 ] "" |> Expect.equal [ slot1, slot2 ]
+        , test "return unchanged list of slots on invalid id" <|
+            \_ ->
+                addSlotFromId slots [ slot1, slot2 ] "string" |> Expect.equal [ slot1, slot2 ]
+        , test "add new slot to list of slot on valid id" <|
+            \_ ->
+                let
+                    uuid =
+                        UUID.toString slot5.id
+
+                    allSlots =
+                        slot5 :: slots
+                in
+                addSlotFromId allSlots [ slot1, slot2 ] uuid |> Expect.equal [ slot5, slot1, slot2 ]
         ]
