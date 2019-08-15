@@ -1,4 +1,4 @@
-module MainTest exposing (addSlotFromIdTest, scheduleTasTest)
+module MainTest exposing (getListOfSlotsFromIdsTest, scheduleTasTest)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
@@ -112,53 +112,37 @@ scheduleTasTest =
         ]
 
 
-addSlotFromIdTest : Test
-addSlotFromIdTest =
-    describe "addSlotFromId"
-        [ test "return empty on empty slots and empty id" <|
+getListOfSlotsFromIdsTest : Test
+getListOfSlotsFromIdsTest =
+    describe "return the list of slots whose ids is in the list of ids"
+        [ test "return empty if slots and ids are empty" <|
             \_ ->
-                addSlotFromId [] [] "" |> Expect.equal []
-        , test "return unchanged list on empty slots" <|
+                getListOfSlotsFromIds [] [] |> Expect.equal []
+        , test "return empty if slots is empty" <|
             \_ ->
                 let
                     uuid =
                         UUID.toString slot5.id
                 in
-                addSlotFromId [] [ slot1, slot2 ] uuid |> Expect.equal [ slot1, slot2 ]
-        , test "return unchanged list of slot on empty id" <|
+                getListOfSlotsFromIds [] [ uuid ] |> Expect.equal []
+        , test "return empty if ids is empty" <|
             \_ ->
-                addSlotFromId slots [ slot1, slot2 ] "" |> Expect.equal [ slot1, slot2 ]
-        , test "return unchanged list of slots on invalid id" <|
-            \_ ->
-                addSlotFromId slots [ slot1, slot2 ] "string" |> Expect.equal [ slot1, slot2 ]
-        , test "add new slot to list of slots on valid id" <|
+                getListOfSlotsFromIds [ slot1, slot2 ] [] |> Expect.equal []
+        , test "return list of slots with id in ids" <|
             \_ ->
                 let
                     uuid =
-                        UUID.toString slot5.id
+                        UUID.toString slot2.id
+                in
+                getListOfSlotsFromIds slots [ uuid ] |> Expect.equal [ slot2 ]
+        , test "return list of slots only if they are in slos" <|
+            \_ ->
+                let
+                    uuid2 =
+                        UUID.toString slot2.id
 
-                    allSlots =
-                        slot5 :: slots
-                in
-                addSlotFromId allSlots [ slot1, slot2 ] uuid |> Expect.equal [ slot1, slot2, slot5 ]
-        , test "delete new slot from list of slots on valid id" <|
-            \_ ->
-                let
-                    uuid =
+                    uuid5 =
                         UUID.toString slot5.id
-
-                    allSlots =
-                        slot5 :: slots
                 in
-                addSlotFromId allSlots allSlots uuid |> Expect.equal slots
-        , test "delete new slot from list of slots when in the middle on valid id" <|
-            \_ ->
-                let
-                    uuid =
-                        UUID.toString slot5.id
-
-                    allSlots =
-                        slot5 :: slots
-                in
-                addSlotFromId allSlots [ slot1, slot5, slot3 ] uuid |> Expect.equal [ slot1, slot3 ]
+                getListOfSlotsFromIds slots [ uuid2, uuid5 ] |> Expect.equal [ slot2 ]
         ]

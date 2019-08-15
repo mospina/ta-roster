@@ -1,10 +1,11 @@
-module Main exposing (Assignment, Schedule, Slot, TA, addSlotFromId, scheduleTas)
+module Main exposing (Assignment, Schedule, Slot, TA, getListOfSlotsFromIds, scheduleTas)
 
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onSubmit)
+import MultiSelect
 import Random exposing (generate)
 import UUID exposing (..)
 import Url
@@ -393,64 +394,69 @@ tasFormView taForm slots =
             ]
         , label []
             [ text "Availability"
-            , select
-                [ multiple True
-                , placeholder "Availability"
-                , onInput (\t -> UpdateTaForm { taForm | avail = addSlotFromId slots taForm.avail t })
-                ]
-                (slotOptions slots)
+            , MultiSelect.multiSelect
+                (tasMultiSelectOptions slots taForm)
+                []
+                (List.map slotToString taForm.avail)
             ]
         , button [ type_ "submit" ] [ text "Add" ]
         ]
 
 
-slotOptions : List Slot -> List (Html Msg)
-slotOptions slots =
+tasMultiSelectOptions : List Slot -> TaForm -> MultiSelect.Options Msg
+tasMultiSelectOptions slots taForm =
     let
-        slotToOption slot =
-            option [ value (UUID.toString slot.id) ] [ text (slotToString slot) ]
+        defaultOptions =
+            MultiSelect.defaultOptions (\t -> UpdateTaForm { taForm | avail = getListOfSlotsFromIds slots t })
+
+        slotToItem slot =
+            { value = UUID.toString slot.id, text = slotToString slot, enabled = True }
     in
-    List.map slotToOption slots
+    { defaultOptions | items = List.map slotToItem slots }
 
 
-addSlotFromId : List Slot -> List Slot -> String -> List Slot
-addSlotFromId slots avail id =
+
+{-
+   CROSS PRODUCT OF TYPE COMMENTS TABLE
+
+
+   +----------------------------------------------------+
+   | slots \ ids | [] | List String                     |
+   |----------------------------------------------------|
+   | []          | [] | []                              |
+   |----------------------------------------------------|
+   | List Slot   | [] | heads are String                |
+   |             |    | tails are getListOfSlotsFromIds |
+   +----------------------------------------------------+
+-}
+
+
+getListOfSlotsFromIds : List Slot -> List String -> List Slot
+getListOfSlotsFromIds slots ids =
     let
-        getMaybeSlot : List Slot -> String -> Maybe Slot
-        getMaybeSlot los uuid =
+        getMaybeSlot los id =
             case los of
                 [] ->
                     Nothing
 
-                first :: rest ->
-                    if UUID.toString first.id == uuid then
-                        Just first
-
-                    else
-                        getMaybeSlot rest uuid
-
-        maybeSlot =
-            getMaybeSlot slots id
-
-        modifyAvail : List Slot -> Slot -> List Slot
-        modifyAvail los s =
-            case los of
-                [] ->
-                    [ s ]
-
                 head :: tail ->
-                    if head == s then
-                        tail
+                    if id == UUID.toString head.id then
+                        Just head
 
                     else
-                        head :: modifyAvail tail s
+                        getMaybeSlot tail id
     in
-    case maybeSlot of
-        Nothing ->
-            avail
+    case ( slots, ids ) of
+        ( los, head :: tail ) ->
+            case getMaybeSlot los head of
+                Nothing ->
+                    getListOfSlotsFromIds slots tail
 
-        Just slot ->
-            modifyAvail avail slot
+                Just slot ->
+                    slot :: getListOfSlotsFromIds slots tail
+
+        _ ->
+            []
 
 
 slotToString : Slot -> String
