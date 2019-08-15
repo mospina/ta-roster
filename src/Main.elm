@@ -362,7 +362,7 @@ tasTable tas =
             tr []
                 [ td [] [ text ta.name ]
                 , td [] [ text (String.fromInt ta.max) ]
-                , td [] [ text (String.fromInt <| List.length ta.avail) ]
+                , td [] [ ul [] <| List.map (\s -> ul [] [ text (slotToString s) ]) ta.avail ]
                 ]
     in
     table [] <| List.map taRow tas
