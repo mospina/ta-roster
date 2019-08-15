@@ -259,7 +259,9 @@ view model =
                             ]
 
                         Schedule ->
-                            [ h2 [] [ text "Schedule" ] ]
+                            [ h2 [] [ text "Schedule" ]
+                            , scheduleTable model.tas model.slots
+                            ]
         ]
     }
 
@@ -429,6 +431,24 @@ tasMultiSelectOptions slots taForm =
    |             |    | tails are getListOfSlotsFromIds |
    +----------------------------------------------------+
 -}
+
+
+scheduleTable : List TA -> List Slot -> Html Msg
+scheduleTable tas slots =
+    let
+        assignmentRow assignment =
+            tr []
+                [ td [] [ text assignment.ta.name ]
+                , td [] [ text (slotToString assignment.slot) ]
+                ]
+    in
+    case scheduleTas tas slots of
+        Nothing ->
+            p [] [ text "Schedule couldn't be done" ]
+
+        Just schedule ->
+            table [] <|
+                List.map assignmentRow schedule
 
 
 getListOfSlotsFromIds : List Slot -> List String -> List Slot
