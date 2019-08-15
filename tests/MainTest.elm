@@ -131,7 +131,7 @@ addSlotFromIdTest =
         , test "return unchanged list of slots on invalid id" <|
             \_ ->
                 addSlotFromId slots [ slot1, slot2 ] "string" |> Expect.equal [ slot1, slot2 ]
-        , test "add new slot to list of slot on valid id" <|
+        , test "add new slot to list of slots on valid id" <|
             \_ ->
                 let
                     uuid =
@@ -140,5 +140,25 @@ addSlotFromIdTest =
                     allSlots =
                         slot5 :: slots
                 in
-                addSlotFromId allSlots [ slot1, slot2 ] uuid |> Expect.equal [ slot5, slot1, slot2 ]
+                addSlotFromId allSlots [ slot1, slot2 ] uuid |> Expect.equal [ slot1, slot2, slot5 ]
+        , test "delete new slot from list of slots on valid id" <|
+            \_ ->
+                let
+                    uuid =
+                        UUID.toString slot5.id
+
+                    allSlots =
+                        slot5 :: slots
+                in
+                addSlotFromId allSlots allSlots uuid |> Expect.equal slots
+        , test "delete new slot from list of slots when in the middle on valid id" <|
+            \_ ->
+                let
+                    uuid =
+                        UUID.toString slot5.id
+
+                    allSlots =
+                        slot5 :: slots
+                in
+                addSlotFromId allSlots [ slot1, slot5, slot3 ] uuid |> Expect.equal [ slot1, slot3 ]
         ]

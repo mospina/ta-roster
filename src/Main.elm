@@ -431,13 +431,26 @@ addSlotFromId slots avail id =
 
         maybeSlot =
             getMaybeSlot slots id
+
+        modifyAvail : List Slot -> Slot -> List Slot
+        modifyAvail los s =
+            case los of
+                [] ->
+                    [ s ]
+
+                head :: tail ->
+                    if head == s then
+                        tail
+
+                    else
+                        head :: modifyAvail tail s
     in
     case maybeSlot of
         Nothing ->
             avail
 
         Just slot ->
-            slot :: avail
+            modifyAvail avail slot
 
 
 slotToString : Slot -> String
